@@ -2,7 +2,7 @@
 
 //-----------------------------------------------------------------------//
 void  heltec_init(){
-  // seriale inizializzata 115200!
+  // serial 115200!
   Heltec.begin(true /*DisplayEnable Enable*/, true /*Heltec.Heltec.Heltec.LoRa Disable*/, true /*Serial Enable*/, true /*PABOOST Enable*/, BAND /*long BAND*/);
 }
 
@@ -64,14 +64,14 @@ void wifi_init() {
   WiFi.setAutoReconnect(true);
   WiFi.persistent(true);
   WiFi.begin(ssid, password);
-  Serial.print("LOG: WIFI - Connessione ");
+  Serial.print("LOG: WIFI - Connecting ");
   Serial.print(ssid);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }  
   Serial.println("");
-  Serial.println("LOG: WIFI - CONNESSO");
+  Serial.println("LOG: WIFI - Connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
   

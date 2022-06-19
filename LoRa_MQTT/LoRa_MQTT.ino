@@ -71,6 +71,7 @@ byte StatusOut1RX =   0x00;
 byte StatusOut2RX =   0x00;
 */     
 
+// Display message definition //
 String MasterStatusIn1_OFF =  "M.Door1 close";
 String MasterStatusIn1_ON =   "M.Door1 open";
 String MasterStatusIn2_OFF =  "M.Door2 close";

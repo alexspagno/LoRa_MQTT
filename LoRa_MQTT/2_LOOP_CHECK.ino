@@ -1,5 +1,5 @@
-// ROUTINE DI CHECK ALL'INTERNO DEL LOOP PRINCIPALE
-/////////////////////////////protocollo v2.0 /////////////////////////////////////////////////////
+
+/////////////////////////////protocol v2.0 /////////////////////////////////////////////////////
  
 
 //-----------------------------------------------------------------------//
@@ -43,10 +43,10 @@ void check_wifi_rssi(){
     lastCheckRssi = millis();  
     
     wifi_rssi = WiFi.RSSI();
-    wifiRssi_status = String(wifi_rssi);  // valore stringa espresso in Dbm per MQTT
-    wifi_rssi = ((wifi_rssi+100)-20)*2;   // calcola valore massimo -30Db valore minimo -80Db
-    String convert = String(wifi_rssi);   // valore stringa da convertitr in int
-    wifi_Rssi_int = convert.toInt();      // converto in int per display    
+    wifiRssi_status = String(wifi_rssi);  // String value unit[Dbm] for MQTT
+    wifi_rssi = ((wifi_rssi+100)-20)*2;   // trasposed value for display bar: max value -30Db, min value -80Db
+    String convert = String(wifi_rssi);   
+    wifi_Rssi_int = convert.toInt();      // converted to INT for display    
   }
 }
 
