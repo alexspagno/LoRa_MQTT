@@ -14,9 +14,9 @@
 #define pin_led1 33
 #define pin_led2 32
 
-int LOG = 2; // 0 nessun LOG , 1 log necessari,  2 tutti i log
+int LOG = 2; // 0 no LOG - 1 standard LOG -  2 all LOG
 
-// Definizione banda LoRa
+// LoRa BAND
 #define BAND    868E6  //you can set band here directly,e.g. 868E6,915E6
 
 
@@ -32,21 +32,16 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org");
 bool master = false;
 
 // WIFI
-const char* ssid = "dd-wrt";
-const char* password = "!buffalo!";
+const char* ssid = "my-ssid";
+const char* password = "my-pass";
 
-//const char* ssid = "Vodafone-teleprojects";
-//const char* password = "!buffalo!";
-
-//const char* ssid = "Android";
-//const char* password = "gqxh8615";
 long wifi_rssi = 0;
 
 
 // MQTT
 const char* mqtt_server = "mqtt.flespi.io";
 //const char* mqtt_port = 1883;
-const char* mqtt_token = "m8GyB28pnDRL6nXXJXHZDB8dGLQjyUbLTH7ix6vIzdhto5eXQMNjbJkHi0QHLPgs";
+const char* mqtt_token = "myTOKEN";
 String MqttConnectionState = "";  // stringa MQTT
 String Lora_fail_status = "";     // stringa MQTT
 //String Lora_rssi_status = "";   // stringa MQTT è rssi
