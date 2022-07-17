@@ -11,8 +11,8 @@
  * MasterStatusOut1
  * MasterStatusOut2
  * MasterLoraRssi
- * MasterLoraErr
- * MasterLoraFail
+ * MasterLoraRetry
+ * MasterLoraTotalRetry
  * MasterWifiRssi * 
  * 
  * SlaveStatusIn1
@@ -20,9 +20,9 @@
  * SlaveStatusOut1
  * SlaveStatusOut2 * 
  * SlaveLoraRssi
- * SlaveLoraErr
- * SlaveLoraFail
- * 
+ * SlaveLoraRetry
+ * SlaveLoraTotalRetry
+ *  
  * 
  */
 
@@ -35,41 +35,104 @@
 // ROUTINE MQTT
 
 //-----------------------------------------------------------------------//
-void callback(char* topic, byte* payload, unsigned int length) {
+void callback(char *MqttTopic, byte *MqttBytePayload, unsigned int length) {
   Serial.println();
   Serial.print("LOG: MQTT - Ricezione Topic [");
-  Serial.print(topic);
+  Serial.print(MqttTopic);
   Serial.println("] ");
-  String str_payload;
-  for (int i = 0; i < length; i++) {
-    str_payload = str_payload + (char)payload[i];    
-  }
+  String MqttPayload;
+  for (int i = 0; i < length; i++) {MqttPayload = MqttPayload + (char)MqttBytePayload[i];}
   // stringa ricevuta da mqtt
   Serial.print("LOG: MQTT - Messaggio: ");
-  Serial.println(str_payload); 
-  
-  // Se ricevo un comando master attivo uscita
-  if     (str_payload == "MasterStatusOut1 ON"){digitalWrite(pin_led1, HIGH); StatusOut1 = 0x01; text_msg = MasterStatusOut1_ON; displayMqttRX();}
-  else if(str_payload == "MasterStatusOut2 ON"){digitalWrite(pin_led2, HIGH); StatusOut2 = 0x01; text_msg = MasterStatusOut2_ON; displayMqttRX();}  
-  else if(str_payload == "MasterStatusOut1 OFF"){digitalWrite(pin_led1, LOW); StatusOut1 = 0x00; text_msg = MasterStatusOut1_OFF; displayMqttRX();}
-  else if(str_payload == "MasterStatusOut2 OFF"){digitalWrite(pin_led2, LOW); StatusOut2 = 0x00; text_msg = MasterStatusOut2_OFF; displayMqttRX();} 
-  else if(str_payload == "MasterCheck"){
-    if      (StatusIn1 == 0x00){client.publish("MasterStatusIn1", MasterStatusIn1_OFF.c_str());}
-    else if (StatusIn1 == 0x01){client.publish("MasterStatusIn1", MasterStatusIn1_ON.c_str());}
-    if      (StatusIn2 == 0x00){client.publish("MasterStatusIn2", MasterStatusIn2_OFF.c_str());}
-    else if (StatusIn2 == 0x01){client.publish("MasterStatusIn2", MasterStatusIn2_ON.c_str());}
-    if      (StatusOut1 == 0x00){client.publish("MasterStatusOut1", MasterStatusOut1_OFF.c_str());}
-    else if (StatusOut1 == 0x01){client.publish("MasterStatusOut1", MasterStatusOut1_ON.c_str());}
-    if      (StatusOut2 == 0x00){client.publish("MasterStatusOut2", MasterStatusOut2_OFF.c_str());}
-    else if (StatusOut2 == 0x01){client.publish("MasterStatusOut2", MasterStatusOut2_ON.c_str());}
+  Serial.println(MqttPayload); 
+
+
+     
+   /******************************************************************************************************************************************************* 
+   * COMANDI MQTT verso Master:
+   * MasterStatusOut1 ON  - attivo uscita, scrivo display
+   * MasterStatusOut2 ON  - attivo uscita, scrivo display
+   * MasterStatusOut1 OFF - disattivo uscita, scrivo display
+   * MasterStatusOut2 OFF - disattivo uscita, scrivo display
+   * MasterCheck          - controllo variabili StatusInX e pubblico sui topic MasterStatusInX le stringhe corrispondenti allo stato definite in setup.h
+   *                      - controllo variabili StatusOutX e pubblico sui topic MasterStatusOutX le stringhe corrispondenti allo stato definite in setup.h                    
+   *******************************************************************************************************************************************************/  
+    
+  if      (strcmp(MqttTopic, MqttTopicMasterCmdOut1) == 0){
+    if     (MqttPayload == MqttCmdON){digitalWrite(pin_led1,HIGH); text_msg = D_MasterStatusOut1_ON; displayMqttRX();}
+    else if(MqttPayload == MqttCmdOFF){digitalWrite(pin_led1,LOW ); text_msg = D_MasterStatusOut1_OFF; displayMqttRX();}
+    else if(MqttPayload == MqttCmdToggle){digitalWrite(pin_led1,HIGH); text_msg = D_MasterStatusOut1_ON; displayMqttRX();}  
   }  
-  // Se ricevo un comando Slave spedisco LoRa 
-  else if(str_payload == "SlaveStatusOut1 ON") {ChangeStatus = 0x11, text_msg = SlaveStatusOut1_ON; displayMqttRX(); LoraSenderStage1();}
-  else if(str_payload == "SlaveStatusOut2 ON") {ChangeStatus = 0x21, text_msg = SlaveStatusOut2_ON; displayMqttRX(); LoraSenderStage1();}
-  else if(str_payload == "SlaveStatusOut1 OFF"){ChangeStatus = 0x10, text_msg = SlaveStatusOut1_OFF; displayMqttRX(); LoraSenderStage1();}
-  else if(str_payload == "SlaveStatusOut2 OFF"){ChangeStatus = 0x20, text_msg = SlaveStatusOut2_OFF; displayMqttRX(); LoraSenderStage1();}
-  else if(str_payload == "SlaveCheck"){ChangeStatus = 0x99, text_msg = "Slave Check"; displayMqttRX(); LoraSenderStage1();}
+  else if (strcmp(MqttTopic, MqttTopicMasterCmdOut2) == 0){
+    if     (MqttPayload == MqttCmdON){digitalWrite(pin_led2,HIGH); text_msg = D_MasterStatusOut2_ON; displayMqttRX();}
+    else if(MqttPayload == MqttCmdOFF){digitalWrite(pin_led2,LOW ); text_msg = D_MasterStatusOut2_OFF; displayMqttRX();}
+    else if(MqttPayload == MqttCmdToggle){digitalWrite(pin_led2,HIGH); text_msg = D_MasterStatusOut2_ON; displayMqttRX();}
+  }
+  else if (strcmp(MqttTopic, MqttTopicMasterCheck) == 0){
+    if     (MqttPayload == MqttCmdCheck){
+      if      (StatusIn1 == 0x00){client.publish(MqttTopicMasterStatusIn1, MqttStatusOFF.c_str());}
+      else if (StatusIn1 == 0x01){client.publish(MqttTopicMasterStatusIn1, MqttStatusON.c_str());}
+      if      (StatusIn2 == 0x00){client.publish(MqttTopicMasterStatusIn2, MqttStatusOFF.c_str());}
+      else if (StatusIn2 == 0x01){client.publish(MqttTopicMasterStatusIn2, MqttStatusON.c_str());}
+      if      (StatusOut1 == 0x00){client.publish(MqttTopicMasterStatusOut1, MqttStatusOFF.c_str());}
+      else if (StatusOut1 == 0x01){client.publish(MqttTopicMasterStatusOut1, MqttStatusON.c_str());}
+      if      (StatusOut2 == 0x00){client.publish(MqttTopicMasterStatusOut2, MqttStatusOFF.c_str());}
+      else if (StatusOut2 == 0x01){client.publish(MqttTopicMasterStatusOut2, MqttStatusON.c_str());}  
+    } 
+  }
+
+   /******************************************************************************************************************************************************* 
+   * COMANDI MQTT verso Slave:                     
+   * SlaveStatusOut1 ON  - setto variabile ChangeStatus 0x11, scrivo display, inizio trasmissione LoRa
+   * SlaveStatusOut2 ON  - setto variabile ChangeStatus 0x21, scrivo display, inizio trasmissione LoRa
+   * SlaveStatusOut1 OFF - setto variabile ChangeStatus 0x10, scrivo display, inizio trasmissione LoRa
+   * SlaveStatusOut2 OFF - setto variabile ChangeStatus 0x20, scrivo display, inizio trasmissione LoRa
+   * SlaveCheck          - setto variabile ChangeStatus 0x99, scrivo display, inizio trasmissione LoRa   *
+   *******************************************************************************************************************************************************/    
+
+  else if (strcmp(MqttTopic, MqttTopicSlaveCmdOut1) == 0){ 
+    if     (MqttPayload == MqttCmdON){ChangeStatus = 0x11, text_msg = D_SlaveStatusOut1_ON; displayMqttRX(); LoraSenderStage1();}
+    else if(MqttPayload == MqttCmdOFF){ChangeStatus = 0x10, text_msg = D_SlaveStatusOut1_OFF; displayMqttRX(); LoraSenderStage1();}    
+  }
+
+  else if (strcmp(MqttTopic, MqttTopicSlaveCmdOut2) == 0){ 
+    if     (MqttPayload == MqttCmdON){ChangeStatus = 0x21, text_msg = D_SlaveStatusOut2_ON; displayMqttRX(); LoraSenderStage1();}
+    else if(MqttPayload == MqttCmdOFF){ChangeStatus = 0x20, text_msg = D_SlaveStatusOut2_OFF; displayMqttRX(); LoraSenderStage1();}    
+  }
+  else if (strcmp(MqttTopic, MqttTopicSlaveCheck) == 0){
+    if     (MqttPayload == MqttCmdCheck){ChangeStatus = 0x99, text_msg = "Slave Check"; displayMqttRX(); LoraSenderStage1();}
+  }
+  
 }
+
+
+void MqttSendConnectionStatus(){
+
+  String MasterWifiRssi = String(wifi_rssi);  // valore stringa espresso in Dbm per MQTT;  
+  String MasterLoraRssi = String(LoraRssi_status);  
+  String MasterLoraRetry = String(LoraTotalRetry);  
+  String MasterLoraTotalRetry = String(LoraTxError);    
+  String SlaveLoraRssi =  String(LoraArrayRX[16]);  
+  String SlaveLoraRetry = String(LoraArrayRX[17]);  
+  String SlaveLoraTotalRetry = String(LoraArrayRX[18]); 
+
+  client.publish(MqttTopicMasterWifiRssi, MasterWifiRssi.c_str());  
+  client.publish(MqttTopicMasterLoraRssi, MasterLoraRssi.c_str());  
+  client.publish(MqttTopicMasterLoraRetry, MasterLoraRetry.c_str());  
+  client.publish(MqttTopicMasterLoraTotalRetry, MasterLoraTotalRetry.c_str());    
+  client.publish(MqttTopicSlaveLoraRssi,  SlaveLoraRssi.c_str());  
+  client.publish(MqttTopicSlaveLoraRetry, SlaveLoraRetry.c_str());  
+  client.publish(MqttTopicSlaveLoraTotalRetry, SlaveLoraTotalRetry.c_str());  
+
+
+
+}
+
+
+
+
+
+
 
 
 void reconnect() {
@@ -90,9 +153,14 @@ void reconnect() {
       timeClient.update();
       MqttConnectionState = timeClient.getFormattedTime();
       MqttConnectionState = "Connected " + MqttConnectionState; 
-      client.subscribe("Command");
-      client.subscribe("Check");
-      client.subscribe("ResetFail");
+      client.subscribe(MqttTopicMasterCheck);
+      client.subscribe(MqttTopicMasterCmdOut1);
+      client.subscribe(MqttTopicMasterCmdOut2);
+      client.subscribe(MqttTopicSlaveCheck);
+      client.subscribe(MqttTopicSlaveCmdOut1);
+      client.subscribe(MqttTopicSlaveCmdOut2);
+
+ 
 
       head_1 = "Connessione mqtt...";  
       head_2 = "connected";
