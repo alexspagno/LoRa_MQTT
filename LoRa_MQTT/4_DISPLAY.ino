@@ -109,12 +109,12 @@ void displayTableStatus(){
   Heltec.display->setFont(ArialMT_Plain_10); 
   if(master){
     Heltec.display->drawString(2, 50, "WIFI");
-    Heltec.display->drawProgressBar(29, 52, 58, 8, wifi_Rssi_int);
+    Heltec.display->drawProgressBar(29, 52, 58, 8, D_WifiRssiBar);
     Heltec.display->drawString(93, 50, mqttStatus);
   }else{
     Heltec.display->drawString(2, 50, "LoRa");
-    Heltec.display->drawProgressBar(29, 52, 58, 8, lora_Rssi_int);
-    Heltec.display->drawString(93, 50, rssi);    
+    Heltec.display->drawProgressBar(29, 52, 58, 8, D_LoraRssiBar);
+    Heltec.display->drawString(93, 50, D_LoraRssi);    
   }
   Heltec.display->display(); 
 }
@@ -122,14 +122,26 @@ void displayTableStatus(){
 void displayCalendar(){ 
   String orario = "";
   String now_time = "";
-  int hr = hour();
-  int min = minute();
+  int hr; // = hour();
+  int min;// = minute();
   String str_hr;
   String str_min;  
   
   if(master){
-    orario = timeClient.getFormattedTime();
-    now_time = orario.substring(0,5);
+
+    hr = timeClient.getHours(); 
+    min = timeClient.getMinutes();
+    str_hr = "";
+    str_min = "";
+    if (hr<10) str_hr = "0" + String(hr); else str_hr = String(hr);
+    if (min<10) str_min = "0" + String(min); else str_min = String(min);
+    now_time = str_hr + ":" + str_min;      
+
+    
+    //orario = timeClient.getFormattedTime();
+    //now_time = orario.substring(0,5);
+
+    
   }else{
     hr = hour();
     min = minute();
